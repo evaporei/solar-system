@@ -1,5 +1,6 @@
 use gl::types::GLuint;
 use glfw::{Action, Context, Key, OpenGlProfileHint, WindowHint};
+use solar_system::shaders::load_shaders;
 
 fn main() {
     let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
@@ -17,7 +18,7 @@ fn main() {
     window.set_key_polling(true);
     window.make_current();
 
-    gl::load_with(|s| window.get_proc_address(s));// kind like glew init
+    gl::load_with(|s| window.get_proc_address(s)); // kind like glew init
 
     unsafe {
         gl::ClearColor(0.0, 0.0, 0.0, 0.0);
@@ -32,11 +33,20 @@ fn main() {
         gl::BindVertexArray(vertex_array_id);
     }
 
+    let program_id = load_shaders(
+        "./resources/shaders/TransformVertexShader.vertexshader",
+        "./resources/shaders/TextureFragmentShader.fragmentshader",
+    );
+
     while !window.should_close() {
         glfw.poll_events();
         for (_, event) in glfw::flush_messages(&events) {
             handle_window_event(&mut window, event);
         }
+    }
+
+    unsafe {
+        gl::DeleteProgram(program_id);
     }
 }
 
