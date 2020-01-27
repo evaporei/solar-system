@@ -1,7 +1,7 @@
 use gl::types::{GLchar, GLuint};
 use glfw::{Action, Context, CursorMode, Key, OpenGlProfileHint, WindowHint};
 use solar_system::object;
-use solar_system::shaders::load_shaders;
+use solar_system::shaders;
 
 const camera_position: glm::Vector3<f32> = glm::Vector3 {
     x: 0.0,
@@ -52,7 +52,7 @@ fn main() {
         gl::BindVertexArray(vertex_array_id);
     }
 
-    let program_id = load_shaders(
+    let program_id = shaders::load(
         "./resources/shaders/TransformVertexShader.vertexshader",
         "./resources/shaders/TextureFragmentShader.fragmentshader",
     );

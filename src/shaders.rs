@@ -2,7 +2,7 @@ use gl::types::{GLboolean, GLchar, GLenum, GLint, GLuint};
 use std::ffi::CStr;
 use std::fs;
 
-pub fn load_shaders(vertex_file_path: &str, fragment_file_path: &str) -> GLuint {
+pub fn load(vertex_file_path: &str, fragment_file_path: &str) -> GLuint {
     let vertex_shader_code = fs::read_to_string(vertex_file_path).unwrap();
     let fragment_shader_code = fs::read_to_string(fragment_file_path).unwrap();
 
