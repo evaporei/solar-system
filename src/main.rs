@@ -2,6 +2,7 @@ use gl::types::{GLchar, GLuint};
 use glfw::{Action, Context, CursorMode, Key, OpenGlProfileHint, WindowHint};
 use solar_system::object;
 use solar_system::shaders;
+use solar_system::texture;
 
 const camera_position: glm::Vector3<f32> = glm::Vector3 {
     x: 0.0,
@@ -175,6 +176,17 @@ fn main() {
             gl::STATIC_DRAW,
         );
     }
+
+    // TEXTURE LOADER
+    let mut textures: [GLuint; 3] = unsafe { std::mem::MaybeUninit::uninit().assume_init() };
+
+    unsafe {
+        gl::GenTextures(3, textures.as_mut_ptr());
+    }
+
+    texture::load(textures[0], "./resources/textures/2k_sun.jpg");
+    texture::load(textures[1], "./resources/textures/earth_apocalypse.jpg");
+    texture::load(textures[2], "./resources/textures/2k_moon.jpg");
 
     while !window.should_close() {
         glfw.poll_events();
