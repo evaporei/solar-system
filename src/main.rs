@@ -75,10 +75,10 @@ fn main() {
     let view = glm::ext::look_at(camera_position, camera_position + camera_front, camera_up);
 
     // 3D OBJECT: SUN
-    let sun_model = glm::mat4(
+    let mut sun_model = glm::mat4(
         1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
     );
-    let sun_mvp = projection * view * sun_model;
+    let mut sun_mvp = projection * view * sun_model;
 
     let (sun_vertexes, sun_uvs, sun_normals) = object::load("./resources/objects/sun.obj");
 
@@ -109,10 +109,10 @@ fn main() {
     }
 
     // 3D OBJECT: EARTH
-    let earth_model = glm::mat4(
+    let mut earth_model = glm::mat4(
         1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
     );
-    let earth_mvp = projection * view * earth_model;
+    let mut earth_mvp = projection * view * earth_model;
 
     let (earth_vertexes, earth_uvs, earth_normals) =
         object::load("./resources/objects/earth_apocalypse.obj");
@@ -144,10 +144,10 @@ fn main() {
     }
 
     // 3D OBJECT: MOON
-    let moon_model = glm::mat4(
+    let mut moon_model = glm::mat4(
         1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
     );
-    let moon_mvp = projection * view * moon_model;
+    let mut moon_mvp = projection * view * moon_model;
 
     let (moon_vertexes, moon_uvs, moon_normals) = object::load("./resources/objects/moon.obj");
 
@@ -188,7 +188,146 @@ fn main() {
     texture::load(textures[1], "./resources/textures/earth_apocalypse.jpg");
     texture::load(textures[2], "./resources/textures/2k_moon.jpg");
 
+    let mut counter = 0.0;
+    let mut rotate_speed = 0.5;
+
+    let mut earth_rotation = 0.0;
+    let mut moon_rotation = 0.0;
+
     while !window.should_close() {
+        counter += 0.01;
+        earth_rotation += 0.3;
+        moon_rotation += 1.0;
+
+        unsafe {
+            gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
+            gl::UseProgram(program_id);
+        }
+
+        /*
+        ====================== FIRST OBJECT ======================
+        */
+        sun_model = glm::ext::rotate(&sun_model, 0.001, glm::vec3(0.0, 1.0, 0.0));
+        sun_mvp = projection * view * sun_model;
+
+        unsafe {
+            gl::Uniform1i(texture_id, 0);
+            gl::UniformMatrix4fv(matrix_id, 1, gl::FALSE, &sun_mvp[0][0]);
+            gl::ActiveTexture(gl::TEXTURE0);
+            gl::BindTexture(gl::TEXTURE_2D, textures[0]);
+        }
+
+        unsafe {
+            gl::EnableVertexAttribArray(0);
+            gl::BindBuffer(gl::ARRAY_BUFFER, sun_vertex_buffer);
+            gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, 0, std::ptr::null());
+        }
+
+        unsafe {
+            gl::EnableVertexAttribArray(1);
+            gl::BindBuffer(gl::ARRAY_BUFFER, sun_uv_buffer);
+            gl::VertexAttribPointer(1, 2, gl::FLOAT, gl::FALSE, 0, std::ptr::null());
+        }
+
+        unsafe {
+            gl::DrawArrays(gl::TRIANGLES, 0, sun_vertexes.len() as i32);
+        }
+
+        /*
+        ====================== SECOND OBJECT ======================
+        */
+        earth_model = glm::ext::translate(
+            &sun_model,
+            glm::vec3(
+                4.0 * glm::sin(counter * 0.1),
+                0.0,
+                4.0 * glm::cos(counter * 0.1),
+            ),
+        );
+
+        earth_model = glm::ext::scale(&earth_model, glm::vec3(0.0, 0.0, 0.0));
+        earth_model = glm::ext::rotate(
+            &earth_model,
+            glm::radians(earth_rotation),
+            glm::vec3(0.0, 1.0, 0.0),
+        );
+
+        earth_mvp = projection * view * earth_model;
+
+        unsafe {
+            gl::Uniform1i(texture_id, 0);
+            gl::UniformMatrix4fv(matrix_id, 1, gl::FALSE, &earth_mvp[0][0]);
+            gl::ActiveTexture(gl::TEXTURE0);
+            gl::BindTexture(gl::TEXTURE_2D, textures[1]);
+        }
+
+        unsafe {
+            gl::EnableVertexAttribArray(0);
+            gl::BindBuffer(gl::ARRAY_BUFFER, earth_vertex_buffer);
+            gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, 0, std::ptr::null());
+        }
+
+        unsafe {
+            gl::EnableVertexAttribArray(1);
+            gl::BindBuffer(gl::ARRAY_BUFFER, earth_uv_buffer);
+            gl::VertexAttribPointer(1, 2, gl::FLOAT, gl::FALSE, 0, std::ptr::null());
+        }
+
+        unsafe {
+            gl::DrawArrays(gl::TRIANGLES, 0, earth_vertexes.len() as i32);
+        }
+
+        /*
+        ====================== THIRD OBJECT ======================
+         */
+        moon_model = glm::ext::translate(
+            &earth_model,
+            glm::vec3(
+                2.0 * glm::sin(counter * 0.1),
+                0.0,
+                2.0 * glm::cos(counter * 0.1),
+            ),
+        );
+        moon_model = glm::ext::scale(&moon_model, glm::vec3(0.4, 0.4, 0.4));
+        moon_model = glm::ext::rotate(
+            &moon_model,
+            glm::radians(moon_rotation),
+            glm::vec3(0.0, -1.0, 0.0),
+        );
+
+        moon_mvp = projection * view * moon_model;
+
+        unsafe {
+            gl::Uniform1i(texture_id, 0);
+            gl::UniformMatrix4fv(matrix_id, 1, gl::FALSE, &moon_mvp[0][0]);
+            gl::ActiveTexture(gl::TEXTURE0);
+            gl::BindTexture(gl::TEXTURE_2D, textures[2]);
+        }
+
+        unsafe {
+            gl::EnableVertexAttribArray(0);
+            gl::BindBuffer(gl::ARRAY_BUFFER, moon_vertex_buffer);
+            gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, 0, std::ptr::null());
+        }
+
+        unsafe {
+            gl::EnableVertexAttribArray(1);
+            gl::BindBuffer(gl::ARRAY_BUFFER, moon_uv_buffer);
+            gl::VertexAttribPointer(1, 2, gl::FLOAT, gl::FALSE, 0, std::ptr::null());
+        }
+
+        unsafe {
+            gl::DrawArrays(gl::TRIANGLES, 0, moon_vertexes.len() as i32);
+        }
+
+        unsafe {
+            gl::DisableVertexAttribArray(0);
+            gl::DisableVertexAttribArray(1);
+            gl::DisableVertexAttribArray(2);
+        }
+
+        window.swap_buffers();
+
         glfw.poll_events();
         for (_, event) in glfw::flush_messages(&events) {
             handle_window_event(&mut window, event);
@@ -196,7 +335,18 @@ fn main() {
     }
 
     unsafe {
+        gl::DeleteBuffers(1, &sun_vertex_buffer);
+        gl::DeleteBuffers(1, &sun_uv_buffer);
+
+        gl::DeleteBuffers(1, &earth_vertex_buffer);
+        gl::DeleteBuffers(1, &earth_uv_buffer);
+
+        gl::DeleteBuffers(1, &moon_vertex_buffer);
+        gl::DeleteBuffers(1, &moon_uv_buffer);
+
         gl::DeleteProgram(program_id);
+
+        gl::DeleteVertexArrays(1, &vertex_array_id);
     }
 }
 
