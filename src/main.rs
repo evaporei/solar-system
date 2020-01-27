@@ -33,7 +33,7 @@ fn main() {
         .create_window(1920, 1080, "Solar System", glfw::WindowMode::Windowed)
         .expect("Failed to create GLFW window.");
 
-    // window.set_key_polling(true);
+    window.set_key_polling(true);
     window.make_current();
 
     window.set_sticky_keys(true);
