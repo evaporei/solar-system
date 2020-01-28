@@ -1,24 +1,36 @@
+#[macro_use]
+extern crate lazy_static;
+
 use gl::types::{GLchar, GLuint};
 use glfw::{Action, Context, CursorMode, Key, OpenGlProfileHint, WindowHint};
 use solar_system::object;
 use solar_system::shaders;
 use solar_system::texture;
+use std::sync::Mutex;
 
-const camera_position: glm::Vector3<f32> = glm::Vector3 {
-    x: 0.0,
-    y: 0.0,
-    z: 6.0,
-};
-const camera_front: glm::Vector3<f32> = glm::Vector3 {
-    x: 0.0,
-    y: 0.0,
-    z: -1.0,
-};
-const camera_up: glm::Vector3<f32> = glm::Vector3 {
-    x: 0.0,
-    y: -1.0,
-    z: 0.0,
-};
+lazy_static! {
+    static ref delta_time: Mutex<f32> = Mutex::new(0.0);
+    static ref last_frame: Mutex<f32> = Mutex::new(0.0);
+    static ref camera_position: Mutex<glm::Vector3<f32>> = Mutex::new(glm::Vector3 {
+        x: 0.0,
+        y: 0.0,
+        z: 6.0,
+    });
+    static ref camera_front: Mutex<glm::Vector3<f32>> = Mutex::new(glm::Vector3 {
+        x: 0.0,
+        y: 0.0,
+        z: -1.0,
+    });
+    static ref camera_up: Mutex<glm::Vector3<f32>> = Mutex::new(glm::Vector3 {
+        x: 0.0,
+        y: -1.0,
+        z: 0.0,
+    });
+    static ref last_x: Mutex<f32> = Mutex::new(512.0);
+    static ref last_y: Mutex<f32> = Mutex::new(384.0);
+    static ref yaw: Mutex<f32> = Mutex::new(-90.0);
+    static ref pitch: Mutex<f32> = Mutex::new(0.0);
+}
 
 fn main() {
     let mut glfw = glfw::init(glfw::FAIL_ON_ERRORS).unwrap();
@@ -26,7 +38,7 @@ fn main() {
     glfw.window_hint(WindowHint::Samples(Some(4)));
     glfw.window_hint(WindowHint::ContextVersionMajor(3));
     glfw.window_hint(WindowHint::ContextVersionMinor(3));
-    glfw.window_hint(WindowHint::OpenGlForwardCompat(true));
+    // glfw.window_hint(WindowHint::OpenGlForwardCompat(true));
     glfw.window_hint(WindowHint::OpenGlProfile(OpenGlProfileHint::Core));
 
     let (mut window, events) = glfw
@@ -72,7 +84,17 @@ fn main() {
     window.set_cursor_mode(CursorMode::Disabled);
 
     let projection = glm::ext::perspective(glm::radians(45.0), 16.0 / 9.0, 0.1, 100.0);
-    let view = glm::ext::look_at(camera_position, camera_position + camera_front, camera_up);
+    let mut view = {
+        let camera_position_guard = camera_position.lock().unwrap();
+        let camera_up_guard = camera_up.lock().unwrap();
+        let camera_front_guard = camera_front.lock().unwrap();
+
+        glm::ext::look_at(
+            *camera_position_guard,
+            *camera_position_guard + *camera_front_guard,
+            *camera_up_guard,
+        )
+    };
 
     // 3D OBJECT: SUN
     let mut sun_model = glm::mat4(
@@ -320,6 +342,27 @@ fn main() {
             gl::DrawArrays(gl::TRIANGLES, 0, moon_vertexes.len() as i32);
         }
 
+        process_input(&window);
+        view = {
+            let camera_position_guard = camera_position.lock().unwrap();
+            let camera_up_guard = camera_up.lock().unwrap();
+            let camera_front_guard = camera_front.lock().unwrap();
+
+            glm::ext::look_at(
+                *camera_position_guard,
+                *camera_position_guard + *camera_front_guard,
+                *camera_up_guard,
+            )
+        };
+
+        let current_frame = glfw.get_time() as f32;
+        {
+            let mut delta_time_guard = delta_time.lock().unwrap();
+            let mut last_frame_guard = last_frame.lock().unwrap();
+            *delta_time_guard = current_frame - *last_frame_guard;
+            *last_frame_guard = current_frame;
+        }
+
         unsafe {
             gl::DisableVertexAttribArray(0);
             gl::DisableVertexAttribArray(1);
@@ -350,9 +393,82 @@ fn main() {
     }
 }
 
+fn process_input(window: &glfw::Window) {
+    let delta_time_guard = delta_time.lock().unwrap();
+
+    let camera_speed = 1.0 * *delta_time_guard;
+
+    let mut camera_position_guard = camera_position.lock().unwrap();
+    let camera_up_guard = camera_up.lock().unwrap();
+    let camera_front_guard = camera_front.lock().unwrap();
+
+    if window.get_key(glfw::Key::W) == glfw::Action::Press {
+        camera_position_guard.x += camera_speed * camera_front_guard.x;
+        camera_position_guard.y += camera_speed * camera_front_guard.y;
+        camera_position_guard.z += camera_speed * camera_front_guard.z;
+    }
+    if window.get_key(glfw::Key::S) == glfw::Action::Press {
+        camera_position_guard.x -= camera_speed * camera_front_guard.x;
+        camera_position_guard.y -= camera_speed * camera_front_guard.y;
+        camera_position_guard.z -= camera_speed * camera_front_guard.z;
+    }
+    if window.get_key(glfw::Key::A) == glfw::Action::Press {
+        let value =
+            glm::normalize(glm::cross(*camera_front_guard, *camera_up_guard)) * camera_speed;
+        camera_position_guard.x -= value.x;
+        camera_position_guard.y -= value.y;
+        camera_position_guard.z -= value.z;
+    }
+    if window.get_key(glfw::Key::D) == glfw::Action::Press {
+        let value =
+            glm::normalize(glm::cross(*camera_front_guard, *camera_up_guard)) * camera_speed;
+        camera_position_guard.x += value.x;
+        camera_position_guard.y += value.y;
+        camera_position_guard.z += value.z;
+    }
+}
+
 fn handle_window_event(window: &mut glfw::Window, event: glfw::WindowEvent) {
     match event {
         glfw::WindowEvent::Key(Key::Escape, _, Action::Press, _) => window.set_should_close(true),
+        glfw::WindowEvent::CursorPos(cursor_x, cursor_y) => {
+            let cursor_x = cursor_x as f32;
+            let cursor_y = cursor_y as f32;
+
+            let mut last_x_guard = last_x.lock().unwrap();
+            let mut last_y_guard = last_y.lock().unwrap();
+            let mut yaw_guard = yaw.lock().unwrap();
+            let mut pitch_guard = pitch.lock().unwrap();
+
+            let mut x_offset = cursor_x - *last_x_guard;
+            let mut y_offset = *last_y_guard - cursor_y;
+            *last_x_guard = cursor_x;
+            *last_y_guard = cursor_y;
+
+            let sensitivity = 0.05;
+            x_offset *= sensitivity;
+            y_offset *= sensitivity;
+
+            *yaw_guard -= x_offset;
+            *pitch_guard -= y_offset;
+
+            if *pitch_guard > 89.0 {
+                *pitch_guard = 89.0;
+            }
+            if *pitch_guard < -89.0 {
+                *pitch_guard = -89.0;
+            }
+
+            let front: glm::Vector3<f32> = glm::Vector3 {
+                x: (glm::cos(glm::radians(*pitch_guard)) * glm::cos(glm::radians(*yaw_guard))),
+                y: glm::sin(glm::radians(*pitch_guard)),
+                z: glm::cos(glm::radians(*pitch_guard)) * glm::sin(glm::radians(*yaw_guard)),
+            };
+
+            let mut camera_front_guard = camera_front.lock().unwrap();
+
+            *camera_front_guard = glm::normalize(front);
+        }
         _ => {}
     }
 }
