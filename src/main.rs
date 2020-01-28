@@ -71,9 +71,12 @@ fn main() {
         "./resources/shaders/TextureFragmentShader.fragmentshader",
     );
 
-    let matrix_id = unsafe { gl::GetUniformLocation(program_id, "MVP".as_ptr() as *const GLchar) };
+    let mvp = "MVP";
+    let my_texture_sampler = "myTextureSampler";
+
+    let matrix_id = unsafe { gl::GetUniformLocation(program_id, mvp.as_ptr() as *const GLchar) };
     let texture_id =
-        unsafe { gl::GetUniformLocation(program_id, "myTextureSampler".as_ptr() as *const GLchar) };
+        unsafe { gl::GetUniformLocation(program_id, my_texture_sampler.as_ptr() as *const GLchar) };
 
     unsafe {
         gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::REPEAT as i32);
@@ -217,7 +220,7 @@ fn main() {
     let mut earth_rotation = 0.0;
     let mut moon_rotation = 0.0;
 
-    while !window.should_close() {
+    while window.get_key(glfw::Key::Escape) != glfw::Action::Press && !window.should_close() {
         counter += 0.01;
         earth_rotation += 0.3;
         moon_rotation += 1.0;
@@ -431,7 +434,6 @@ fn process_input(window: &glfw::Window) {
 
 fn handle_window_event(window: &mut glfw::Window, event: glfw::WindowEvent) {
     match event {
-        glfw::WindowEvent::Key(Key::Escape, _, Action::Press, _) => window.set_should_close(true),
         glfw::WindowEvent::CursorPos(cursor_x, cursor_y) => {
             let cursor_x = cursor_x as f32;
             let cursor_y = cursor_y as f32;
