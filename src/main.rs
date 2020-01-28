@@ -435,6 +435,7 @@ fn process_input(window: &glfw::Window) {
 fn handle_window_event(window: &mut glfw::Window, event: glfw::WindowEvent) {
     match event {
         glfw::WindowEvent::CursorPos(cursor_x, cursor_y) => {
+            println!("cursor pos: {}, {}", cursor_x, cursor_y);
             let cursor_x = cursor_x as f32;
             let cursor_y = cursor_y as f32;
 
