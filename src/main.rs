@@ -1,4 +1,3 @@
-#![allow(warnings)]
 #[macro_use]
 extern crate lazy_static;
 
@@ -10,27 +9,27 @@ use solar_system::texture;
 use std::sync::Mutex;
 
 lazy_static! {
-    static ref delta_time: Mutex<f32> = Mutex::new(0.0);
-    static ref last_frame: Mutex<f32> = Mutex::new(0.0);
-    static ref camera_position: Mutex<glm::Vector3<f32>> = Mutex::new(glm::Vector3 {
+    static ref DELTA_TIME: Mutex<f32> = Mutex::new(0.0);
+    static ref LAST_FRAME: Mutex<f32> = Mutex::new(0.0);
+    static ref CAMERA_POSITION: Mutex<glm::Vector3<f32>> = Mutex::new(glm::Vector3 {
         x: 0.0,
         y: 0.0,
         z: 6.0,
     });
-    static ref camera_front: Mutex<glm::Vector3<f32>> = Mutex::new(glm::Vector3 {
+    static ref CAMERA_FRONT: Mutex<glm::Vector3<f32>> = Mutex::new(glm::Vector3 {
         x: 0.0,
         y: 0.0,
         z: -1.0,
     });
-    static ref camera_up: Mutex<glm::Vector3<f32>> = Mutex::new(glm::Vector3 {
+    static ref CAMERA_UP: Mutex<glm::Vector3<f32>> = Mutex::new(glm::Vector3 {
         x: 0.0,
         y: -1.0,
         z: 0.0,
     });
-    static ref last_x: Mutex<f32> = Mutex::new(512.0);
-    static ref last_y: Mutex<f32> = Mutex::new(384.0);
-    static ref yaw: Mutex<f32> = Mutex::new(-90.0);
-    static ref pitch: Mutex<f32> = Mutex::new(0.0);
+    static ref LAST_X: Mutex<f32> = Mutex::new(512.0);
+    static ref LAST_Y: Mutex<f32> = Mutex::new(384.0);
+    static ref YAW: Mutex<f32> = Mutex::new(-90.0);
+    static ref PITCH: Mutex<f32> = Mutex::new(0.0);
 }
 
 fn main() {
@@ -89,9 +88,9 @@ fn main() {
 
     let projection = glm::ext::perspective(glm::radians(45.0), 16.0 / 9.0, 0.1, 100.0);
     let mut view = {
-        let camera_position_guard = camera_position.lock().unwrap();
-        let camera_up_guard = camera_up.lock().unwrap();
-        let camera_front_guard = camera_front.lock().unwrap();
+        let camera_position_guard = CAMERA_POSITION.lock().unwrap();
+        let camera_up_guard = CAMERA_UP.lock().unwrap();
+        let camera_front_guard = CAMERA_FRONT.lock().unwrap();
 
         glm::ext::look_at(
             *camera_position_guard,
@@ -104,9 +103,9 @@ fn main() {
     let mut sun_model = glm::mat4(
         1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
     );
-    let mut sun_mvp = projection * view * sun_model;
+    let mut sun_mvp;
 
-    let (sun_vertexes, sun_uvs, sun_normals) = object::load("./resources/objects/sun.obj");
+    let (sun_vertexes, sun_uvs, _sun_normals) = object::load("./resources/objects/sun.obj");
 
     let mut sun_vertex_buffer: GLuint = 0;
 
@@ -135,12 +134,10 @@ fn main() {
     }
 
     // 3D OBJECT: EARTH
-    let mut earth_model = glm::mat4(
-        1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
-    );
-    let mut earth_mvp = projection * view * earth_model;
+    let mut earth_model;
+    let mut earth_mvp;
 
-    let (earth_vertexes, earth_uvs, earth_normals) =
+    let (earth_vertexes, earth_uvs, _earth_normals) =
         object::load("./resources/objects/earth_apocalypse.obj");
 
     let mut earth_vertex_buffer: GLuint = 0;
@@ -170,12 +167,10 @@ fn main() {
     }
 
     // 3D OBJECT: MOON
-    let mut moon_model = glm::mat4(
-        1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
-    );
-    let mut moon_mvp = projection * view * moon_model;
+    let mut moon_model;
+    let mut moon_mvp;
 
-    let (moon_vertexes, moon_uvs, moon_normals) = object::load("./resources/objects/moon.obj");
+    let (moon_vertexes, moon_uvs, _moon_normals) = object::load("./resources/objects/moon.obj");
 
     let mut moon_vertex_buffer: GLuint = 0;
 
@@ -215,12 +210,12 @@ fn main() {
     texture::load(textures[2], "./resources/textures/2k_moon.jpg");
 
     let mut counter = 0.0;
-    let mut rotate_speed = 0.5;
+    let _rotate_speed = 0.5;
 
     let mut earth_rotation = 0.0;
     let mut moon_rotation = 0.0;
 
-    while window.get_key(glfw::Key::Escape) != glfw::Action::Press && !window.should_close() {
+    while window.get_key(Key::Escape) != Action::Press && !window.should_close() {
         counter += 0.01;
         earth_rotation += 0.3;
         moon_rotation += 1.0;
@@ -271,7 +266,7 @@ fn main() {
             ),
         );
 
-        earth_model = glm::ext::scale(&earth_model, glm::vec3(0.0, 0.0, 0.0));
+        earth_model = glm::ext::scale(&earth_model, glm::vec3(0.8, 0.8, 0.8));
         earth_model = glm::ext::rotate(
             &earth_model,
             glm::radians(earth_rotation),
@@ -348,9 +343,9 @@ fn main() {
 
         process_input(&window);
         view = {
-            let camera_position_guard = camera_position.lock().unwrap();
-            let camera_up_guard = camera_up.lock().unwrap();
-            let camera_front_guard = camera_front.lock().unwrap();
+            let camera_position_guard = CAMERA_POSITION.lock().unwrap();
+            let camera_up_guard = CAMERA_UP.lock().unwrap();
+            let camera_front_guard = CAMERA_FRONT.lock().unwrap();
 
             glm::ext::look_at(
                 *camera_position_guard,
@@ -361,8 +356,8 @@ fn main() {
 
         let current_frame = glfw.get_time() as f32;
         {
-            let mut delta_time_guard = delta_time.lock().unwrap();
-            let mut last_frame_guard = last_frame.lock().unwrap();
+            let mut delta_time_guard = DELTA_TIME.lock().unwrap();
+            let mut last_frame_guard = LAST_FRAME.lock().unwrap();
             *delta_time_guard = current_frame - *last_frame_guard;
             *last_frame_guard = current_frame;
         }
@@ -398,32 +393,32 @@ fn main() {
 }
 
 fn process_input(window: &glfw::Window) {
-    let delta_time_guard = delta_time.lock().unwrap();
+    let delta_time_guard = DELTA_TIME.lock().unwrap();
 
     let camera_speed = 1.0 * *delta_time_guard;
 
-    let mut camera_position_guard = camera_position.lock().unwrap();
-    let camera_up_guard = camera_up.lock().unwrap();
-    let camera_front_guard = camera_front.lock().unwrap();
+    let mut camera_position_guard = CAMERA_POSITION.lock().unwrap();
+    let camera_up_guard = CAMERA_UP.lock().unwrap();
+    let camera_front_guard = CAMERA_FRONT.lock().unwrap();
 
-    if window.get_key(glfw::Key::W) == glfw::Action::Press {
+    if window.get_key(Key::W) == Action::Press {
         camera_position_guard.x += camera_speed * camera_front_guard.x;
         camera_position_guard.y += camera_speed * camera_front_guard.y;
         camera_position_guard.z += camera_speed * camera_front_guard.z;
     }
-    if window.get_key(glfw::Key::S) == glfw::Action::Press {
+    if window.get_key(Key::S) == Action::Press {
         camera_position_guard.x -= camera_speed * camera_front_guard.x;
         camera_position_guard.y -= camera_speed * camera_front_guard.y;
         camera_position_guard.z -= camera_speed * camera_front_guard.z;
     }
-    if window.get_key(glfw::Key::A) == glfw::Action::Press {
+    if window.get_key(Key::A) == Action::Press {
         let value =
             glm::normalize(glm::cross(*camera_front_guard, *camera_up_guard)) * camera_speed;
         camera_position_guard.x -= value.x;
         camera_position_guard.y -= value.y;
         camera_position_guard.z -= value.z;
     }
-    if window.get_key(glfw::Key::D) == glfw::Action::Press {
+    if window.get_key(Key::D) == Action::Press {
         let value =
             glm::normalize(glm::cross(*camera_front_guard, *camera_up_guard)) * camera_speed;
         camera_position_guard.x += value.x;
@@ -432,17 +427,16 @@ fn process_input(window: &glfw::Window) {
     }
 }
 
-fn handle_window_event(window: &mut glfw::Window, event: glfw::WindowEvent) {
+fn handle_window_event(_window: &mut glfw::Window, event: glfw::WindowEvent) {
     match event {
         glfw::WindowEvent::CursorPos(cursor_x, cursor_y) => {
-            println!("cursor pos: {}, {}", cursor_x, cursor_y);
             let cursor_x = cursor_x as f32;
             let cursor_y = cursor_y as f32;
 
-            let mut last_x_guard = last_x.lock().unwrap();
-            let mut last_y_guard = last_y.lock().unwrap();
-            let mut yaw_guard = yaw.lock().unwrap();
-            let mut pitch_guard = pitch.lock().unwrap();
+            let mut last_x_guard = LAST_X.lock().unwrap();
+            let mut last_y_guard = LAST_Y.lock().unwrap();
+            let mut yaw_guard = YAW.lock().unwrap();
+            let mut pitch_guard = PITCH.lock().unwrap();
 
             let mut x_offset = cursor_x - *last_x_guard;
             let mut y_offset = *last_y_guard - cursor_y;
@@ -469,7 +463,7 @@ fn handle_window_event(window: &mut glfw::Window, event: glfw::WindowEvent) {
                 z: glm::cos(glm::radians(*pitch_guard)) * glm::sin(glm::radians(*yaw_guard)),
             };
 
-            let mut camera_front_guard = camera_front.lock().unwrap();
+            let mut camera_front_guard = CAMERA_FRONT.lock().unwrap();
 
             *camera_front_guard = glm::normalize(front);
         }
