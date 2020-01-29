@@ -15,6 +15,10 @@ pub fn load(
     Vec<glm::Vector2<f32>>,
     Vec<glm::Vector3<f32>>,
 ) {
+    // println!("{:?}", sun_mvp.c0);
+    // println!("{:?}", sun_mvp.c1);
+    // println!("{:?}", sun_mvp.c2);
+    // println!("{:?}", sun_mvp.c3);
     let file = File::open(path).unwrap();
     let reader = BufReader::new(file);
 
