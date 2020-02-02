@@ -84,6 +84,7 @@ fn main() {
     }
 
     window.set_cursor_mode(CursorMode::Disabled);
+    window.set_cursor_pos_polling(true);
 
     let projection = glm::ext::perspective(glm::radians(45.0), 16.0 / 9.0, 0.1, 100.0);
     let mut view = {
