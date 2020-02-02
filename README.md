@@ -4,7 +4,7 @@ Translation of [iobruno](https://github.com/iobruno)'s OpenGL Solar System from 
 
 How it looks:
 
-![screenshot-of-it-running](https://user-images.githubusercontent.com/15306309/73604289-fe182080-456c-11ea-916d-407888cb74e6.png)
+![screenshot-of-it-running](https://user-images.githubusercontent.com/15306309/73604358-4552e100-456e-11ea-8f58-b3a1c537504c.png)
 
 ## Installing dependencies
 
