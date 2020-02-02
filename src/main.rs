@@ -1,6 +1,4 @@
-#[macro_use]
-extern crate lazy_static;
-
+use lazy_static::lazy_static;
 use gl::types::{GLchar, GLuint};
 use glfw::{Action, Context, CursorMode, Key, OpenGlProfileHint, WindowHint};
 use solar_system::object;
