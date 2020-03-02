@@ -7,8 +7,10 @@ use solar_system::texture;
 use std::sync::Mutex;
 
 lazy_static! {
+    // Time::new()
     static ref DELTA_TIME: Mutex<f32> = Mutex::new(0.0);
     static ref LAST_FRAME: Mutex<f32> = Mutex::new(0.0);
+    // Camera::new() or View::new()
     static ref CAMERA_POSITION: Mutex<glm::Vector3<f32>> = Mutex::new(glm::Vector3 {
         x: 0.0,
         y: 0.0,
@@ -46,8 +48,11 @@ fn main() {
     window.set_key_polling(true);
     window.make_current();
     window.set_framebuffer_size_polling(true);
-
     window.set_sticky_keys(true);
+    window.set_cursor_mode(CursorMode::Disabled);
+    window.set_cursor_pos_polling(true);
+
+    //let gl_world = OpenGlWorld::new();
 
     gl::load_with(|s| window.get_proc_address(s)); // kind like glew init
 
@@ -64,11 +69,14 @@ fn main() {
         gl::BindVertexArray(vertex_array_id);
     }
 
+    //gl_world.load_shaders(vertex, fragment);
+
     let program_id = shaders::load(
         "./resources/shaders/TransformVertexShader.vertexshader",
         "./resources/shaders/TextureFragmentShader.fragmentshader",
     );
 
+    // gl_world.create_texture_sampler("MVP", "myTextureSampler")
     let mvp = "MVP\0";
     let my_texture_sampler = "myTextureSampler\0";
 
@@ -83,9 +91,7 @@ fn main() {
         gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
     }
 
-    window.set_cursor_mode(CursorMode::Disabled);
-    window.set_cursor_pos_polling(true);
-
+    //gl_world.set_view(16 / 9 ou algo assim + Camera::new / View::new)
     let projection = glm::ext::perspective(glm::radians(45.0), 16.0 / 9.0, 0.1, 100.0);
     let mut view = {
         let camera_position_guard = CAMERA_POSITION.lock().unwrap();
@@ -99,6 +105,8 @@ fn main() {
         )
     };
 
+    // let sun = Object3D::new("./resources/sun.obj");
+    // sun.set_matrix(glm::mat4(1.0, ...));
     // 3D OBJECT: SUN
     let mut sun_model = glm::mat4(
         1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
@@ -133,6 +141,7 @@ fn main() {
         );
     }
 
+    // let earth = Object3D::new("./resources/earth.obj");
     // 3D OBJECT: EARTH
     let mut earth_model;
     let mut earth_mvp;
@@ -166,6 +175,7 @@ fn main() {
         );
     }
 
+    // let moon = Object3D::new("./resources/moon.obj");
     // 3D OBJECT: MOON
     let mut moon_model;
     let mut moon_mvp;
@@ -198,6 +208,7 @@ fn main() {
         );
     }
 
+    //gl_world.load_textures("resources...")
     // TEXTURE LOADER
     let mut textures: [GLuint; 3] = unsafe { std::mem::MaybeUninit::uninit().assume_init() };
 
@@ -220,6 +231,7 @@ fn main() {
         earth_rotation += 0.3;
         moon_rotation += 1.0;
 
+        // gl_world.clear();
         unsafe {
             gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT);
             gl::UseProgram(program_id);
@@ -228,9 +240,11 @@ fn main() {
         /*
         ====================== FIRST OBJECT ======================
         */
+        //sun.rotate(...)
         sun_model = glm::ext::rotate(&sun_model, 0.001, glm::vec3(0.0, 1.0, 0.0));
         _sun_mvp = projection * view * sun_model;
 
+        //gl_world.render_object3d(sun)
         unsafe {
             gl::Uniform1i(texture_id, 0);
             gl::UniformMatrix4fv(matrix_id, 1, gl::FALSE, &_sun_mvp[0][0]);
@@ -257,6 +271,7 @@ fn main() {
         /*
         ====================== SECOND OBJECT ======================
         */
+        //earth.rotate(...)
         earth_model = glm::ext::translate(
             &sun_model,
             glm::vec3(
@@ -275,6 +290,7 @@ fn main() {
 
         earth_mvp = projection * view * earth_model;
 
+        //gl_world.render_object3d(earth)
         unsafe {
             gl::Uniform1i(texture_id, 0);
             gl::UniformMatrix4fv(matrix_id, 1, gl::FALSE, &earth_mvp[0][0]);
@@ -301,6 +317,7 @@ fn main() {
         /*
         ====================== THIRD OBJECT ======================
          */
+        //moon.rotate(...)
         moon_model = glm::ext::translate(
             &earth_model,
             glm::vec3(
@@ -318,6 +335,7 @@ fn main() {
 
         moon_mvp = projection * view * moon_model;
 
+        //gl_world.render_object3d(moon)
         unsafe {
             gl::Uniform1i(texture_id, 0);
             gl::UniformMatrix4fv(matrix_id, 1, gl::FALSE, &moon_mvp[0][0]);
@@ -342,6 +360,8 @@ fn main() {
         }
 
         process_input(&window);
+        //process_input(window, gl_world)
+        //gl_world.update_view()
         view = {
             let camera_position_guard = CAMERA_POSITION.lock().unwrap();
             let camera_up_guard = CAMERA_UP.lock().unwrap();
@@ -354,6 +374,7 @@ fn main() {
             )
         };
 
+        // time.update() or whatever
         let current_frame = glfw.get_time() as f32;
         {
             let mut delta_time_guard = DELTA_TIME.lock().unwrap();
@@ -376,6 +397,10 @@ fn main() {
         }
     }
 
+    //moon.drop()// it will be automatic ;)
+    //earth.drop()// it will be automatic ;)
+    //sun.drop()// it will be automatic ;)
+    //gl_world.drop()// it will be automatic ;)
     unsafe {
         gl::DeleteBuffers(1, &sun_vertex_buffer);
         gl::DeleteBuffers(1, &sun_uv_buffer);
